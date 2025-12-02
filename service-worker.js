@@ -9,4 +9,3 @@ self.addEventListener("activate", event => {
 
 // alle Requests einfach normal durchs Netz schicken
 self.addEventListener("fetch", () => {});
-
