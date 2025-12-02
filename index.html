@@ -1,215 +1,86 @@
-// ==========================
-// Wochenbericht – komplette Logik (ohne PDF)
-// ==========================
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wochenbericht</title>
 
-// ---- Kalenderwoche berechnen ----
-function getISOWeek(date) {
-    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-    const dayNum = d.getUTCDay() || 7;
-    d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-    return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
-}
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#007bff">
 
-function getCurrentWeek() {
-    return getISOWeek(new Date());
-}
+    <!-- Styles -->
+    <link rel="stylesheet" href="style.css">
 
-// ---- Tabelle generieren ----
-const dayNames = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
-const daysContainer = document.getElementById("days");
-
-dayNames.forEach((name, i) => {
-    daysContainer.innerHTML += `
-        <tr>
-            <td>${name}</td>
-            <td><input type="time" class="start" name="start-${i}"></td>
-            <td><input type="number" class="pause" name="pause-${i}" min="0" value="0"></td>
-            <td><input type="time" class="end" name="end-${i}"></td>
-            <td class="result"></td>
-            <td><input type="text" class="tour" name="tour-${i}"></td>
-            <td><input type="text" class="spesen" name="spesen-${i}"></td>
-        </tr>
-    `;
-});
-
-// ---- Zeitfunktionen ----
-function parseTime(value) {
-    if (!value) return null;
-    const [h, m] = value.split(":").map(Number);
-    return h * 60 + m;
-}
-
-function minutesToHHMM(min) {
-    return `${String(Math.floor(min / 60)).padStart(2,"0")}:${String(min % 60).padStart(2,"0")}`;
-}
-
-// ---- Stunden + Spesen Berechnung ----
-function update() {
-    let totalMinutes = 0;
-    let totalSpesen = 0;
-
-    document.querySelectorAll("#days tr").forEach(row => {
-        const start = parseTime(row.querySelector(".start").value);
-        const end   = parseTime(row.querySelector(".end").value);
-        const pause = parseInt(row.querySelector(".pause").value || 0);
-
-        if (start !== null && end !== null) {
-            let diff = end - start - pause;
-            if (diff < 0) diff = 0;
-            row.querySelector(".result").textContent = minutesToHHMM(diff);
-            totalMinutes += diff;
-        } else {
-            row.querySelector(".result").textContent = "";
+    <!-- Service Worker -->
+    <script>
+        if ("serviceWorker" in navigator) {
+            navigator.serviceWorker.register("service-worker.js");
         }
+    </script>
+</head>
 
-        let sp = row.querySelector(".spesen").value.replace(",",".");
-        if (!isNaN(parseFloat(sp))) totalSpesen += parseFloat(sp);
-    });
+<body>
+<div class="wrapper">
+    <h1>Wochenbericht / Stundenzettel</h1>
 
-    document.getElementById("total-hours").textContent = minutesToHHMM(totalMinutes);
-    document.getElementById("total-spesen").textContent =
-        totalSpesen.toFixed(2).replace(".",",") + " €";
-}
+    <div class="row">
+        <div class="field">
+            <label>Mitarbeiter</label>
+            <input id="name" type="text">
+        </div>
+        <div class="field">
+            <label>Von</label>
+            <input id="from" type="date">
+        </div>
+        <div class="field">
+            <label>Bis</label>
+            <input id="to" type="date">
+        </div>
+        <div class="field">
+            <label>KW</label>
+            <input id="kw" type="number" min="1" max="53">
+        </div>
+    </div>
 
-// ==========================
-// Daten speichern (localStorage) pro Woche
-// ==========================
+    <div class="table-box">
+        <table>
+            <thead>
+            <tr>
+                <th>Tag</th>
+                <th>Start</th>
+                <th>Pause</th>
+                <th>Ende</th>
+                <th>Std.</th>
+                <th>Tour</th>
+                <th>Spesen</th>
+            </tr>
+            </thead>
+            <tbody id="days"></tbody>
+        </table>
+    </div>
 
-const STORAGE_DATA = "wochenberichtData";
-const STORAGE_WEEK = "wochenberichtKW";
+    <div class="totals">
+        <div>
+            <strong>Wochenstunden:</strong><br>
+            <span id="total-hours">00:00</span>
+        </div>
+        <div>
+            <strong>Spesen gesamt:</strong><br>
+            <span id="total-spesen">0,00 €</span>
+        </div>
+    </div>
 
-function saveAllInputs() {
-    const data = {};
-    document.querySelectorAll("input").forEach(input => {
-        const key = input.id || input.name;
-        if (key) data[key] = input.value;
-    });
+    <label>Unterschrift (Finger auf Handy):</label>
+    <canvas id="signature-pad"></canvas>
 
-    localStorage.setItem(STORAGE_DATA, JSON.stringify(data));
-    localStorage.setItem(STORAGE_WEEK, getCurrentWeek());
-}
+    <div class="buttons">
+        <button id="clear-signature">Unterschrift löschen</button>
+        <button id="send-whatsapp">WhatsApp Text senden</button>
+    </div>
+</div>
 
-function loadAllInputs() {
-    const raw = localStorage.getItem(STORAGE_DATA);
-    if (!raw) return;
-    const data = JSON.parse(raw);
+<script src="script.js"></script>
+</body>
+</html>
 
-    document.querySelectorAll("input").forEach(input => {
-        const key = input.id || input.name;
-        if (data[key] !== undefined) input.value = data[key];
-    });
-}
-
-// Beim Start
-window.addEventListener("DOMContentLoaded", () => {
-    const savedWeek = parseInt(localStorage.getItem(STORAGE_WEEK));
-    const currentWeek = getCurrentWeek();
-
-    const kwField = document.getElementById("kw");
-    if (kwField && !kwField.value) kwField.value = currentWeek;
-
-    if (savedWeek === currentWeek) {
-        loadAllInputs();
-        update();
-    } else {
-        localStorage.removeItem(STORAGE_DATA);
-        localStorage.setItem(STORAGE_WEEK, currentWeek);
-    }
-});
-
-// Live speichern + rechnen
-document.addEventListener("input", () => {
-    update();
-    saveAllInputs();
-});
-
-// ==========================
-// Unterschrift Pad (Touch + Maus)
-// ==========================
-const canvas = document.getElementById("signature-pad");
-const ctx = canvas.getContext("2d");
-let drawing = false;
-
-function resizeCanvas() {
-    const ratio = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * ratio;
-    canvas.height = rect.height * ratio;
-    ctx.setTransform(1,0,0,1,0,0);
-    ctx.scale(ratio, ratio);
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-}
-
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
-function getPos(e) {
-    const rect = canvas.getBoundingClientRect();
-    const clientX = e.clientX ?? (e.touches && e.touches[0].clientX);
-    const clientY = e.clientY ?? (e.touches && e.touches[0].clientY);
-    return {
-        x: clientX - rect.left,
-        y: clientY - rect.top
-    };
-}
-
-canvas.addEventListener("pointerdown", e => {
-    drawing = true;
-    const pos = getPos(e);
-    ctx.beginPath();
-    ctx.moveTo(pos.x, pos.y);
-});
-
-canvas.addEventListener("pointermove", e => {
-    if (!drawing) return;
-    const pos = getPos(e);
-    ctx.lineTo(pos.x, pos.y);
-    ctx.stroke();
-});
-
-canvas.addEventListener("pointerup", () => drawing = false);
-canvas.addEventListener("pointerleave", () => drawing = false);
-
-document.getElementById("clear-signature").onclick = () => {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-};
-
-// ==========================
-// WhatsApp Text senden
-// ==========================
-document.getElementById("send-whatsapp").onclick = () => {
-    let text = "Wochenbericht\n";
-
-    const name = document.getElementById("name").value || "";
-    const from = document.getElementById("from").value || "";
-    const to   = document.getElementById("to").value || "";
-    const kw   = document.getElementById("kw").value || "";
-
-    if (name) text += "Name: " + name + "\n";
-    if (from || to) text += "Zeitraum: " + from + " - " + to + "\n";
-    if (kw) text += "KW: " + kw + "\n";
-
-    text += "\n";
-
-    document.querySelectorAll("#days tr").forEach(row => {
-        const dayName = row.children[0].textContent;
-        const s  = row.querySelector(".start").value;
-        const e  = row.querySelector(".end").value;
-        const p  = row.querySelector(".pause").value;
-        const h  = row.querySelector(".result").textContent;
-        const t  = row.querySelector(".tour").value;
-        const sp = row.querySelector(".spesen").value;
-
-        if (s || e || t || sp) {
-            text += `${dayName}: ${s || "-"} - ${e || "-"}, Pause ${p || "0"} Min, Std ${h || "00:00"}, Tour ${t || "-"}, Spesen ${sp || "0"}\n`;
-        }
-    });
-
-    text += "\nGesamtstunden: " + document.getElementById("total-hours").textContent;
-    text += "\nSpesen gesamt: " + document.getElementById("total-spesen").textContent;
-
-    const url = "https://wa.me/?text=" + encodeURIComponent(text);
-    window.open(url, "_blank");
-};
