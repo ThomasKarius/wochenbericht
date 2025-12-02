@@ -1,8 +1,11 @@
-const dayNames = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+// ----------------------
+// Tabellenzeilen erstellen
+// ----------------------
+const dayNames = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
 const daysContainer = document.getElementById("days");
 
 dayNames.forEach((name, i) => {
-    daysContainer.innerHTML += `
+  daysContainer.innerHTML += `
     <tr data-id="${i}">
         <td>${name}</td>
         <td><input type="time" class="start"></td>
@@ -14,111 +17,153 @@ dayNames.forEach((name, i) => {
     </tr>`;
 });
 
-// Parse Time
+// ----------------------
+// Hilfsfunktionen
+// ----------------------
 function parseTime(value) {
-    if (!value) return null;
-    const [h, m] = value.split(":").map(Number);
-    return h * 60 + m;
+  if (!value) return null;
+  const [h, m] = value.split(":").map(Number);
+  return h * 60 + m;
 }
 
-// Convert minutes to HH:MM
 function minutesToHHMM(min) {
-    return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
+  return `${String(Math.floor(min / 60)).padStart(2, "0")}:${String(min % 60).padStart(2, "0")}`;
 }
 
-// Update calculations
+// ----------------------
+// Haupt-Berechnung
+// ----------------------
 function update() {
-    let totalMinutes = 0;
-    let totalSpesen = 0;
+  let totalMinutes = 0;
+  let totalSpesen = 0;
 
-    document.querySelectorAll("#days tr").forEach(row => {
-        const start = parseTime(row.querySelector(".start").value);
-        const end = parseTime(row.querySelector(".end").value);
-        const pause = parseInt(row.querySelector(".pause").value || 0);
+  document.querySelectorAll("#days tr").forEach(row => {
+    const start = parseTime(row.querySelector(".start").value);
+    const end = parseTime(row.querySelector(".end").value);
+    const pause = parseInt(row.querySelector(".pause").value || 0);
 
-        if (start !== null && end !== null) {
-            let diff = end - start - pause;
-            if (diff < 0) diff = 0;
-            row.querySelector(".result").textContent = minutesToHHMM(diff);
-            totalMinutes += diff;
-        } else {
-            row.querySelector(".result").textContent = "";
-        }
+    if (start !== null && end !== null) {
+      let diff = end - start - pause;
+      if (diff < 0) diff = 0;
+      row.querySelector(".result").textContent = minutesToHHMM(diff);
+      totalMinutes += diff;
+    } else {
+      row.querySelector(".result").textContent = "";
+    }
 
-        const spesen = row.querySelector(".spesen").value.replace(",", ".");
-        if (!isNaN(parseFloat(spesen))) {
-            totalSpesen += parseFloat(spesen);
-        }
-    });
+    const spesen = row.querySelector(".spesen").value.replace(",", ".");
+    if (!isNaN(parseFloat(spesen))) {
+      totalSpesen += parseFloat(spesen);
+    }
+  });
 
-    document.getElementById("total-hours").textContent = minutesToHHMM(totalMinutes);
-    document.getElementById("total-spesen").textContent =
-        totalSpesen.toFixed(2).replace(".", ",") + " €";
+  document.getElementById("total-hours").textContent = minutesToHHMM(totalMinutes);
+  document.getElementById("total-spesen").textContent =
+    totalSpesen.toFixed(2).replace(".", ",") + " €";
 }
 
 document.addEventListener("input", update);
 
-// WhatsApp sharing
+// ----------------------
+// WhatsApp Textversand
+// ----------------------
 document.getElementById("send-whatsapp").onclick = () => {
-    let text = "Wochenbericht\n";
-    text += "Name: " + document.getElementById("name").value + "\n";
+  let text = "Wochenbericht\n";
+  text += "Name: " + document.getElementById("name").value + "\n";
 
-    document.querySelectorAll("#days tr").forEach(row => {
-        const name = row.children[0].textContent;
-        const s = row.querySelector(".start").value;
-        const e = row.querySelector(".end").value;
-        const p = row.querySelector(".pause").value;
-        const h = row.querySelector(".result").textContent;
-        const t = row.querySelector(".tour").value;
-        const sp = row.querySelector(".spesen").value;
+  document.querySelectorAll("#days tr").forEach(row => {
+    const name = row.children[0].textContent;
+    const s = row.querySelector(".start").value;
+    const e = row.querySelector(".end").value;
+    const p = row.querySelector(".pause").value;
+    const h = row.querySelector(".result").textContent;
+    const t = row.querySelector(".tour").value;
+    const sp = row.querySelector(".spesen").value;
 
-        if (s || e || t || sp) {
-            text += `${name}: ${s}-${e}, Pause ${p}, Std ${h}, Tour ${t}, Spesen ${sp}\n`;
-        }
-    });
+    if (s || e || t || sp) {
+      text += `${name}: ${s}-${e}, Pause ${p}, Std ${h}, Tour ${t}, Spesen ${sp}\n`;
+    }
+  });
 
-    text += "\nGesamtstunden: " + document.getElementById("total-hours").textContent;
-    text += "\nSpesen gesamt: " + document.getElementById("total-spesen").textContent;
+  text += "\nGesamtstunden: " + document.getElementById("total-hours").textContent;
+  text += "\nSpesen gesamt: " + document.getElementById("total-spesen").textContent;
 
-    window.open("https://wa.me/?text=" + encodeURIComponent(text));
+  window.open("https://wa.me/?text=" + encodeURIComponent(text));
 };
 
-// Signature Pad
+// ----------------------
+// Unterschrift Pad
+// ----------------------
 const canvas = document.getElementById("signature-pad");
 const ctx = canvas.getContext("2d");
 let drawing = false;
 
-// Resize canvas to device pixel ratio
 function resize() {
-    const ratio = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * ratio;
-    canvas.height = rect.height * ratio;
-    ctx.scale(ratio, ratio);
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
+  const ratio = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = rect.width * ratio;
+  canvas.height = rect.height * ratio;
+  ctx.scale(ratio, ratio);
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
 }
 
 resize();
 window.addEventListener("resize", resize);
 
 canvas.addEventListener("pointerdown", e => {
-    drawing = true;
-    ctx.beginPath();
+  drawing = true;
+  ctx.beginPath();
 });
 
 canvas.addEventListener("pointerup", () => {
-    drawing = false;
+  drawing = false;
 });
 
 canvas.addEventListener("pointermove", e => {
-    if (!drawing) return;
-    const rect = canvas.getBoundingClientRect();
-    ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
-    ctx.stroke();
+  if (!drawing) return;
+  const rect = canvas.getBoundingClientRect();
+  ctx.lineTo(e.clientX - rect.left, e.clientY - rect.top);
+  ctx.stroke();
 });
 
 document.getElementById("clear-signature").onclick = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 };
+
+// ----------------------
+// PDF Export Funktion
+// ----------------------
+document.getElementById("pdf-button").onclick = async () => {
+  const { jsPDF } = window.jspdf;
+
+  const element = document.querySelector(".wrapper");
+  const canvasPDF = await html2canvas(element, { scale: 2 });
+  const imgData = canvasPDF.toDataURL("image/png");
+
+  const pdf = new jsPDF("p", "mm", "a4");
+  const pdfWidth = 210;
+  const pdfHeight = (canvasPDF.height * 210) / canvasPDF.width;
+
+  pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+  pdf.save("wochenbericht.pdf");
+
+  if (navigator.canShare) {
+    const file = new File([pdf.output("blob")], "wochenbericht.pdf", {
+      type: "application/pdf",
+    });
+
+    try {
+      await navigator.share({
+        title: "Wochenbericht",
+        files: [file],
+      });
+    } catch (err) {
+      console.log("Teilen abgebrochen", err);
+    }
+  } else {
+    alert("PDF wurde gespeichert. Jetzt manuell über WhatsApp senden.");
+  }
+};
+
 
