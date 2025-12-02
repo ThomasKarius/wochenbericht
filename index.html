@@ -12,6 +12,11 @@
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 
+    <!-- Libraries for PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- Service Worker -->
     <script>
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("service-worker.js");
@@ -38,7 +43,7 @@
         </div>
         <div class="field">
             <label>KW</label>
-            <input id="kw" type="number">
+            <input id="kw" type="number" min="1" max="53">
         </div>
     </div>
 
@@ -74,17 +79,14 @@
     <canvas id="signature-pad"></canvas>
 
     <div class="buttons">
-    <button id="clear-signature">Unterschrift löschen</button>
-    <button id="send-whatsapp">Text per WhatsApp</button>
-    <button id="pdf-button">PDF exportieren</button>
-</div>
-
+        <button id="clear-signature">Unterschrift löschen</button>
+        <button id="send-whatsapp">WhatsApp Text</button>
+        <button id="pdf-button">PDF Export</button>
+    </div>
 
 </div>
 
 <script src="script.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  
 </body>
 </html>
+
