@@ -79,7 +79,6 @@ function update() {
 const STORAGE_DATA = "wochenberichtData";
 const STORAGE_WEEK = "wochenberichtKW";
 
-// Daten speichern
 function saveAllInputs() {
     const data = {};
     document.querySelectorAll("input").forEach(input => {
@@ -91,7 +90,6 @@ function saveAllInputs() {
     localStorage.setItem(STORAGE_WEEK, getCurrentWeek());
 }
 
-// Daten laden
 function loadAllInputs() {
     const raw = localStorage.getItem(STORAGE_DATA);
     if (!raw) return;
@@ -103,12 +101,10 @@ function loadAllInputs() {
     });
 }
 
-// Beim Start prüfen ob neue Woche
 window.addEventListener("DOMContentLoaded", () => {
     const savedWeek = parseInt(localStorage.getItem(STORAGE_WEEK));
     const currentWeek = getCurrentWeek();
 
-    // KW automatisch setzen
     const kwField = document.getElementById("kw");
     if (kwField && !kwField.value) kwField.value = currentWeek;
 
@@ -150,9 +146,11 @@ window.addEventListener("resize", resizeCanvas);
 
 function getPos(e) {
     const rect = canvas.getBoundingClientRect();
+    const clientX = e.clientX ?? (e.touches && e.touches[0].clientX);
+    const clientY = e.clientY ?? (e.touches && e.touches[0].clientY);
     return {
-        x: (e.clientX || e.touches[0].clientX) - rect.left,
-        y: (e.clientY || e.touches[0].clientY) - rect.top
+        x: clientX - rect.left,
+        y: clientY - rect.top
     };
 }
 
@@ -173,44 +171,49 @@ canvas.addEventListener("pointermove", e => {
 canvas.addEventListener("pointerup", () => drawing = false);
 canvas.addEventListener("pointerleave", () => drawing = false);
 
-document.getElementById("clear-signature").onclick = () => {
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-};
+// ACHTUNG: clear-signature ist optional
+const clearBtn = document.getElementById("clear-signature");
+if (clearBtn) {
+    clearBtn.onclick = () => {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+    };
+}
 
 // ==========================
 // PDF Export + WhatsApp
 // ==========================
-document.getElementById("pdf-whatsapp").onclick = async () => {
-    const { jsPDF } = window.jspdf;
+const pdfBtn = document.getElementById("pdf-whatsapp");
+if (pdfBtn) {
+    pdfBtn.onclick = async () => {
+        const { jsPDF } = window.jspdf;
 
-    const element = document.querySelector(".wrapper");
-    const canvasPDF = await html2canvas(element, { scale: 2 });
-    const imgData = canvasPDF.toDataURL("image/png");
+        const element = document.querySelector(".wrapper");
+        const canvasPDF = await html2canvas(element, { scale: 2 });
+        const imgData = canvasPDF.toDataURL("image/png");
 
-    const pdf = new jsPDF("p", "mm", "a4");
-    const w = 210;
-    const h = (canvasPDF.height * 210) / canvasPDF.width;
+        const pdf = new jsPDF("p", "mm", "a4");
+        const w = 210;
+        const h = (canvasPDF.height * 210) / canvasPDF.width;
 
-    pdf.addImage(imgData, "PNG", 0, 0, w, h);
+        pdf.addImage(imgData, "PNG", 0, 0, w, h);
 
-    const blob = pdf.output("blob");
-    const file = new File([blob], "wochenbericht.pdf", { type: "application/pdf" });
+        const blob = pdf.output("blob");
+        const file = new File([blob], "wochenbericht.pdf", { type: "application/pdf" });
 
-    // Teilen möglich?
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-            title: "Wochenbericht",
-            files: [file]
-        });
-        return;
-    }
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            try {
+                await navigator.share({
+                    title: "Wochenbericht",
+                    files: [file]
+                });
+                return;
+            } catch (e) {
+                console.log("Teilen abgebrochen:", e);
+            }
+        }
 
-    // Fallback
-    pdf.save("wochenbericht.pdf");
-    alert("PDF gespeichert. Öffne es und sende es über WhatsApp.");
-};
-
-
-
-
+        pdf.save("wochenbericht.pdf");
+        alert("PDF gespeichert. Öffne es und sende es über WhatsApp.");
+    };
+}
 
