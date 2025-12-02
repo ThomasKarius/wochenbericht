@@ -12,7 +12,7 @@
     <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- Libraries for PDF -->
+    <!-- PDF-Bibliotheken (müssen im HEAD stehen!) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
@@ -75,17 +75,19 @@
         </div>
     </div>
 
-    <label>Unterschrift:</label>
+    <label>Unterschrift (mit Finger auf Handy):</label>
     <canvas id="signature-pad"></canvas>
 
-    <div class="buttons">
-        <button id="clear-signature">Unterschrift löschen</button>
-        <button id="send-whatsapp">WhatsApp Text</button>
-        <button id="pdf-button">PDF Export</button>
-    </div>
+    <!-- BUTTONS -->
+   <div class="buttons">
+    <button id="pdf-whatsapp">PDF via WhatsApp</button>
+</div>
+
 
 </div>
 
 <script src="script.js"></script>
 </body>
 </html>
+
+
