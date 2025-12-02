@@ -1,5 +1,5 @@
 // ==========================
-// Wochenbericht – komplette Logik
+// Wochenbericht – komplette Logik (ohne PDF)
 // ==========================
 
 // ---- Kalenderwoche berechnen ----
@@ -73,7 +73,7 @@ function update() {
 }
 
 // ==========================
-// Daten speichern (localStorage)
+// Daten speichern (localStorage) pro Woche
 // ==========================
 
 const STORAGE_DATA = "wochenberichtData";
@@ -101,6 +101,7 @@ function loadAllInputs() {
     });
 }
 
+// Beim Start
 window.addEventListener("DOMContentLoaded", () => {
     const savedWeek = parseInt(localStorage.getItem(STORAGE_WEEK));
     const currentWeek = getCurrentWeek();
@@ -171,49 +172,46 @@ canvas.addEventListener("pointermove", e => {
 canvas.addEventListener("pointerup", () => drawing = false);
 canvas.addEventListener("pointerleave", () => drawing = false);
 
-// ACHTUNG: clear-signature ist optional
-const clearBtn = document.getElementById("clear-signature");
-if (clearBtn) {
-    clearBtn.onclick = () => {
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-    };
-}
+document.getElementById("clear-signature").onclick = () => {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+};
 
 // ==========================
-// PDF Export + WhatsApp
+// WhatsApp Text senden
 // ==========================
-const pdfBtn = document.getElementById("pdf-whatsapp");
-if (pdfBtn) {
-    pdfBtn.onclick = async () => {
-        const { jsPDF } = window.jspdf;
+document.getElementById("send-whatsapp").onclick = () => {
+    let text = "Wochenbericht\n";
 
-        const element = document.querySelector(".wrapper");
-        const canvasPDF = await html2canvas(element, { scale: 2 });
-        const imgData = canvasPDF.toDataURL("image/png");
+    const name = document.getElementById("name").value || "";
+    const from = document.getElementById("from").value || "";
+    const to   = document.getElementById("to").value || "";
+    const kw   = document.getElementById("kw").value || "";
 
-        const pdf = new jsPDF("p", "mm", "a4");
-        const w = 210;
-        const h = (canvasPDF.height * 210) / canvasPDF.width;
+    if (name) text += "Name: " + name + "\n";
+    if (from || to) text += "Zeitraum: " + from + " - " + to + "\n";
+    if (kw) text += "KW: " + kw + "\n";
 
-        pdf.addImage(imgData, "PNG", 0, 0, w, h);
+    text += "\n";
 
-        const blob = pdf.output("blob");
-        const file = new File([blob], "wochenbericht.pdf", { type: "application/pdf" });
+    document.querySelectorAll("#days tr").forEach(row => {
+        const dayName = row.children[0].textContent;
+        const s  = row.querySelector(".start").value;
+        const e  = row.querySelector(".end").value;
+        const p  = row.querySelector(".pause").value;
+        const h  = row.querySelector(".result").textContent;
+        const t  = row.querySelector(".tour").value;
+        const sp = row.querySelector(".spesen").value;
 
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            try {
-                await navigator.share({
-                    title: "Wochenbericht",
-                    files: [file]
-                });
-                return;
-            } catch (e) {
-                console.log("Teilen abgebrochen:", e);
-            }
+        if (s || e || t || sp) {
+            text += `${dayName}: ${s || "-"} - ${e || "-"}, Pause ${p || "0"} Min, Std ${h || "00:00"}, Tour ${t || "-"}, Spesen ${sp || "0"}\n`;
         }
+    });
 
-        pdf.save("wochenbericht.pdf");
-        alert("PDF gespeichert. Öffne es und sende es über WhatsApp.");
-    };
-}
+    text += "\nGesamtstunden: " + document.getElementById("total-hours").textContent;
+    text += "\nSpesen gesamt: " + document.getElementById("total-spesen").textContent;
+
+    const url = "https://wa.me/?text=" + encodeURIComponent(text);
+    window.open(url, "_blank");
+};
+
 
