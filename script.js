@@ -214,4 +214,3 @@ document.getElementById("send-whatsapp").onclick = () => {
     window.open(url, "_blank");
 };
 
-
