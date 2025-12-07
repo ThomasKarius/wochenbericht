@@ -20,7 +20,7 @@ days.forEach((d, i) => {
 });
 
 // =======================================
-// Stundenberechnung
+// Stunden & Spesen Berechnung
 // =======================================
 
 function calcTime() {
@@ -33,16 +33,12 @@ function calcTime() {
         const e = document.querySelector(`[name=end${i}]`).value;
 
         if (s && e) {
-            const start = toMin(s);
-            const end = toMin(e);
-            let diff = end - start - p;
-            if (diff < 0) diff = 0;
-
+            const diff = Math.max(0, toMin(e) - toMin(s) - p);
             total += diff;
             document.getElementById(`hours${i}`).textContent = toHHMM(diff);
         }
 
-        const sp = parseFloat(document.querySelector(`[name=spesen${i}]`).value.replace(",","."));
+        const sp = parseFloat(document.querySelector(`[name=spesen${i}]`).value.replace(",", "."));
         if (!isNaN(sp)) spesenTotal += sp;
     });
 
@@ -56,7 +52,11 @@ function toMin(t) {
 }
 
 function toHHMM(min) {
-    return String(Math.floor(min / 60)).padStart(2,"0") + ":" + String(min % 60).padStart(2,"0");
+    return (
+        String(Math.floor(min / 60)).padStart(2, "0") +
+        ":" +
+        String(min % 60).padStart(2, "0")
+    );
 }
 
 document.addEventListener("input", calcTime);
@@ -75,53 +75,57 @@ function resizeCanvas() {
     canvas.width = rect.width * ratio;
     canvas.height = rect.height * ratio;
     ctx.scale(ratio, ratio);
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
 }
+
 resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 canvas.addEventListener("pointerdown", e => {
     drawing = true;
     ctx.beginPath();
     ctx.moveTo(e.offsetX, e.offsetY);
 });
-
 canvas.addEventListener("pointermove", e => {
     if (!drawing) return;
     ctx.lineTo(e.offsetX, e.offsetY);
     ctx.stroke();
 });
-
 canvas.addEventListener("pointerup", () => drawing = false);
 canvas.addEventListener("pointerleave", () => drawing = false);
 
 // =======================================
-// PDF + WhatsApp
+// PDF DIREKT per WhatsApp senden
 // =======================================
 
 document.getElementById("send-pdf").onclick = async () => {
     const { jsPDF } = window.jspdf;
 
     const element = document.querySelector(".wrapper");
-    const c = await html2canvas(element, { scale: 2 });
-    const imgData = c.toDataURL("image/png");
+    const screenshot = await html2canvas(element, { scale: 2 });
+    const imgData = screenshot.toDataURL("image/png");
 
     const pdf = new jsPDF("p", "mm", "a4");
     const w = 210;
-    const h = (c.height * 210) / c.width;
+    const h = (screenshot.height * 210) / screenshot.width;
 
     pdf.addImage(imgData, "PNG", 0, 0, w, h);
 
     const blob = pdf.output("blob");
-    const file = new File([blob], "wochenbericht.pdf", { type: "application/pdf" });
+    const file = new File([blob], "wochenbericht.pdf", {
+        type: "application/pdf"
+    });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({
+        await navigator.share({
             title: "Wochenbericht",
-            files: [file]
+            files: [file],
+            text: "Wochenbericht"
         });
     } else {
         pdf.save("wochenbericht.pdf");
-        alert("PDF gespeichert. Bitte manuell per WhatsApp senden.");
+        alert("PDF gespeichert — WhatsApp-Versand wird nicht direkt unterstützt.");
     }
 };
-
 
