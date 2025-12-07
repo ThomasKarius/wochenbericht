@@ -1,8 +1,8 @@
-<script>
-    if ("serviceWorker" in navigator) {
-        navigator.serviceWorker.register("/wochenbericht/service-worker.js")
-        .then(() => console.log("Service Worker installiert"))
-        .catch(err => console.log("SW Fehler:", err));
-    }
-</script>
+self.addEventListener("install", () => {
+    console.log("Service Worker installiert");
+    self.skipWaiting();
+});
 
+self.addEventListener("activate", () => {
+    console.log("Service Worker aktiv");
+});
