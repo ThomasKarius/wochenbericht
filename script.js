@@ -1,9 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
 
     // ====================================================
-    // Kalenderwoche bestimmen
+    // Aktuelle Kalenderwoche automatisch bestimmen
     // ====================================================
-    function getWeekNumber(date) {
+    function getWeekNumber(date = new Date()) {
         const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
         const day = d.getUTCDay() || 7;
         d.setUTCDate(d.getUTCDate() + 4 - day);
@@ -11,18 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     }
 
-    // ====================================================
-    // AKTUELLE Kalenderwoche berechnen (mit oder ohne "Von")
-    // ====================================================
-    function getEffectiveKW() {
-        const fromValue = document.getElementById("from").value;
-
-        if (fromValue) {
-            return getWeekNumber(new Date(fromValue));
-        }
-
-        return getWeekNumber(new Date());
-    }
+    const currentKW = getWeekNumber();
 
     // ====================================================
     // Tabelle erzeugen
@@ -45,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ====================================================
-    // Stunden & Spesen berechnen
+    // Berechnung
     // ====================================================
     function calcTime() {
         let total = 0;
@@ -62,7 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 document.getElementById(`hours${i}`).textContent = toHHMM(diff);
             }
 
-            const sp = parseFloat(document.querySelector(`[name=spesen${i}]`).value.replace(",", "."));
+            const sp = parseFloat(
+                document.querySelector(`[name=spesen${i}]`).value.replace(",", ".")
+            );
             if (!isNaN(sp)) spesenTotal += sp;
         });
 
@@ -73,13 +64,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function toMin(t) {
-        const [h, m] = t.split(":").map(Number);
+        const [h,m] = t.split(":").map(Number);
         return h * 60 + m;
     }
 
     function toHHMM(min) {
         return (
-            String(Math.floor(min / 60)).padStart(2, "0") + ":" +
+            String(Math.floor(min / 60)).padStart(2, "0") +
+            ":" +
             String(min % 60).padStart(2, "0")
         );
     }
@@ -121,9 +113,6 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.addEventListener("pointerup", () => drawing = false);
     canvas.addEventListener("pointerleave", () => drawing = false);
 
-    // ====================================================
-    // Unterschrift löschen
-    // ====================================================
     document.getElementById("clear-signature").onclick = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         saveData();
@@ -134,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ====================================================
     function saveData() {
         const data = {
-            kw: getEffectiveKW(),
+            kw: currentKW,
             fields: {}
         };
 
@@ -148,37 +137,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // ====================================================
-    // Daten laden oder neue Woche erkennen
+    // Laden / Reset
     // ====================================================
     function loadOrReset() {
         const saved = JSON.parse(localStorage.getItem("wochenbericht") || "{}");
-        const currentKW = getEffectiveKW();
 
         if (!saved.kw || saved.kw !== currentKW) {
-            console.log("NEUE WOCHE → AUTOMATISCH RESET");
+            console.log("Neue Woche erkannt → Reset");
 
-            // Alle Felder löschen
+            // Alles löschen
             document.querySelectorAll("input").forEach(inp => inp.value = "");
-
-            // Summen zurücksetzen
             document.getElementById("total-hours").textContent = "00:00";
             document.getElementById("total-spesen").textContent = "0,00 €";
-
-            // Unterschrift löschen
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Daten löschen
             localStorage.removeItem("wochenbericht");
             return;
         }
 
-        // GLEICHE WOCHE → DATEN LADEN
+        // Daten laden
         for (const key in saved.fields) {
-            const inp = document.querySelector(`[id='${key}'],[name='${key}']`);
+            const inp = document.querySelector(`[id='${key}'], [name='${key}']`);
             if (inp) inp.value = saved.fields[key];
         }
 
-        // Signatur laden
         if (saved.signature) {
             const img = new Image();
             img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
@@ -191,7 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
     loadOrReset();
 
     // ====================================================
-    // PDF per WhatsApp senden
+    // PDF per WhatsApp
     // ====================================================
     document.getElementById("send-pdf").onclick = async () => {
         const { jsPDF } = window.jspdf;
@@ -207,7 +189,9 @@ document.addEventListener("DOMContentLoaded", () => {
         pdf.addImage(imgData, "PNG", 0, 0, w, h);
 
         const blob = pdf.output("blob");
-        const file = new File([blob], "wochenbericht.pdf", { type: "application/pdf" });
+        const file = new File([blob], "wochenbericht.pdf", {
+            type: "application/pdf"
+        });
 
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
@@ -217,8 +201,9 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         } else {
             pdf.save("wochenbericht.pdf");
-            alert("PDF gespeichert — Gerät unterstützt kein direktes WhatsApp-Sharing.");
+            alert("PDF gespeichert – Gerät unterstützt kein direktes WhatsApp-Sharing.");
         }
     };
 
 });
+
