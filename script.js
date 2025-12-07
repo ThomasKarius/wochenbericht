@@ -1,21 +1,9 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    // ====================================================
-    // Aktuelle Kalenderwoche automatisch bestimmen
-    // ====================================================
-    function getWeekNumber(date = new Date()) {
-        const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-        const day = d.getUTCDay() || 7;
-        d.setUTCDate(d.getUTCDate() + 4 - day);
-        const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-        return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-    }
-
-    const currentKW = getWeekNumber();
-
-    // ====================================================
+    // ============================
     // Tabelle erzeugen
-    // ====================================================
+    // ============================
+
     const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
     const tbody = document.getElementById("days");
 
@@ -33,9 +21,23 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
     });
 
-    // ====================================================
-    // Berechnung
-    // ====================================================
+    // ============================
+    // Stunden & Spesen berechnen
+    // ============================
+
+    function toMin(t) {
+        const [h, m] = t.split(":").map(Number);
+        return h * 60 + m;
+    }
+
+    function toHHMM(min) {
+        return (
+            String(Math.floor(min / 60)).padStart(2, "0") +
+            ":" +
+            String(min % 60).padStart(2, "0")
+        );
+    }
+
     function calcTime() {
         let total = 0;
         let spesenTotal = 0;
@@ -49,11 +51,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 const diff = Math.max(0, toMin(e) - toMin(s) - p);
                 total += diff;
                 document.getElementById(`hours${i}`).textContent = toHHMM(diff);
+            } else {
+                document.getElementById(`hours${i}`).textContent = "";
             }
 
-            const sp = parseFloat(
-                document.querySelector(`[name=spesen${i}]`).value.replace(",", ".")
-            );
+            const spRaw = document.querySelector(`[name=spesen${i}]`).value;
+            const sp = parseFloat(spRaw.replace(",", "."));
             if (!isNaN(sp)) spesenTotal += sp;
         });
 
@@ -63,24 +66,12 @@ document.addEventListener("DOMContentLoaded", () => {
         saveData();
     }
 
-    function toMin(t) {
-        const [h,m] = t.split(":").map(Number);
-        return h * 60 + m;
-    }
-
-    function toHHMM(min) {
-        return (
-            String(Math.floor(min / 60)).padStart(2, "0") +
-            ":" +
-            String(min % 60).padStart(2, "0")
-        );
-    }
-
     document.addEventListener("input", calcTime);
 
-    // ====================================================
+    // ============================
     // Unterschrift
-    // ====================================================
+    // ============================
+
     const canvas = document.getElementById("signature");
     const ctx = canvas.getContext("2d");
     let drawing = false;
@@ -90,6 +81,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const ratio = window.devicePixelRatio || 1;
         canvas.width = rect.width * ratio;
         canvas.height = rect.height * ratio;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.scale(ratio, ratio);
         ctx.lineWidth = 2;
         ctx.lineCap = "round";
@@ -113,68 +105,99 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.addEventListener("pointerup", () => drawing = false);
     canvas.addEventListener("pointerleave", () => drawing = false);
 
+    // ============================
+    // Unterschrift löschen
+    // ============================
+
     document.getElementById("clear-signature").onclick = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         saveData();
     };
 
-    // ====================================================
-    // Daten speichern
-    // ====================================================
+    // ============================
+    // Daten speichern & laden
+    // ============================
+
+    const STORAGE_KEY = "wochenbericht_v1";
+
     function saveData() {
         const data = {
-            kw: currentKW,
-            fields: {}
+            fields: {},
+            signature: canvas.toDataURL()
         };
 
         document.querySelectorAll("input").forEach(inp => {
-            data.fields[inp.id || inp.name] = inp.value;
+            const key = inp.id || inp.name;
+            if (key) data.fields[key] = inp.value;
         });
 
-        data.signature = canvas.toDataURL();
-
-        localStorage.setItem("wochenbericht", JSON.stringify(data));
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
 
-    // ====================================================
-    // Laden / Reset
-    // ====================================================
-    function loadOrReset() {
-        const saved = JSON.parse(localStorage.getItem("wochenbericht") || "{}");
+    function loadData() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
 
-        if (!saved.kw || saved.kw !== currentKW) {
-            console.log("Neue Woche erkannt → Reset");
+        try {
+            const data = JSON.parse(raw);
 
-            // Alles löschen
-            document.querySelectorAll("input").forEach(inp => inp.value = "");
-            document.getElementById("total-hours").textContent = "00:00";
-            document.getElementById("total-spesen").textContent = "0,00 €";
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (data.fields) {
+                for (const key in data.fields) {
+                    const inp = document.querySelector(
+                        `[id='${key}'], [name='${key}']`
+                    );
+                    if (inp) inp.value = data.fields[key];
+                }
+            }
 
-            localStorage.removeItem("wochenbericht");
-            return;
+            if (data.signature) {
+                const img = new Image();
+                img.onload = () => {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.src = data.signature;
+            }
+
+            calcTime();
+        } catch (e) {
+            console.error("Fehler beim Laden der gespeicherten Daten:", e);
+            localStorage.removeItem(STORAGE_KEY);
         }
-
-        // Daten laden
-        for (const key in saved.fields) {
-            const inp = document.querySelector(`[id='${key}'], [name='${key}']`);
-            if (inp) inp.value = saved.fields[key];
-        }
-
-        if (saved.signature) {
-            const img = new Image();
-            img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            img.src = saved.signature;
-        }
-
-        calcTime();
     }
 
-    loadOrReset();
+    loadData();
 
-    // ====================================================
-    // PDF per WhatsApp
-    // ====================================================
+    // ============================
+    // Woche manuell zurücksetzen
+    // ============================
+
+    document.getElementById("reset-week").onclick = () => {
+        if (!confirm("Wirklich die ganze Woche löschen?")) return;
+
+        // alle Inputs leeren
+        document.querySelectorAll("input").forEach(inp => inp.value = "");
+
+        // Stunden & Spesen zurücksetzen
+        document.getElementById("total-hours").textContent = "00:00";
+        document.getElementById("total-spesen").textContent = "0,00 €";
+
+        // Zeilenstunden löschen
+        days.forEach((_, i) => {
+            document.getElementById(`hours${i}`).textContent = "";
+        });
+
+        // Unterschrift löschen
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Speicher löschen
+        localStorage.removeItem(STORAGE_KEY);
+    };
+
+    // ============================
+    // PDF per WhatsApp senden
+    // ============================
+
     document.getElementById("send-pdf").onclick = async () => {
         const { jsPDF } = window.jspdf;
 
@@ -201,9 +224,10 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         } else {
             pdf.save("wochenbericht.pdf");
-            alert("PDF gespeichert – Gerät unterstützt kein direktes WhatsApp-Sharing.");
+            alert("PDF gespeichert – dein Gerät unterstützt kein direktes WhatsApp-Sharing.");
         }
     };
 
 });
+
 
