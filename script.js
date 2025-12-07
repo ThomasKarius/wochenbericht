@@ -1,19 +1,29 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    // =======================================
-    // Kalenderwoche berechnen
-    // =======================================
-    function getWeekNumber(date = new Date()) {
+    // ====================================================
+    // Kalenderwoche anhand des "Von"-Datums bestimmen
+    // ====================================================
+    function getCurrentWeekFromInput() {
+        const fromField = document.getElementById("from").value;
+
+        let date;
+        if (fromField) {
+            date = new Date(fromField + "T00:00:00");
+        } else {
+            date = new Date();
+        }
+
         const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
         const dayNum = d.getUTCDay() || 7;
         d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+
         const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
         return Math.ceil(((d - yearStart) / 86400000 + 1) / 7);
     }
 
-    // =======================================
-    // Tabellen-Erzeugung
-    // =======================================
+    // ====================================================
+    // Tabelle erzeugen
+    // ====================================================
     const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
     const tbody = document.getElementById("days");
 
@@ -31,9 +41,9 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
     });
 
-    // =======================================
-    // Stunden & Spesen Berechnung
-    // =======================================
+    // ====================================================
+    // Stunden- und Spesenberechnung
+    // ====================================================
     function calcTime() {
         let total = 0;
         let spesenTotal = 0;
@@ -58,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("total-hours").textContent = toHHMM(total);
         document.getElementById("total-spesen").textContent = spesenTotal.toFixed(2) + " €";
 
-        saveData(); // Werte sofort speichern
+        saveData();
     }
 
     function toMin(t) {
@@ -76,9 +86,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("input", calcTime);
 
-    // =======================================
+    // ====================================================
     // Unterschrift
-    // =======================================
+    // ====================================================
     const canvas = document.getElementById("signature");
     const ctx = canvas.getContext("2d");
     let drawing = false;
@@ -111,20 +121,20 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.addEventListener("pointerup", () => drawing = false);
     canvas.addEventListener("pointerleave", () => drawing = false);
 
-    // =======================================
+    // ====================================================
     // Unterschrift löschen
-    // =======================================
+    // ====================================================
     document.getElementById("clear-signature").onclick = () => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        saveData(); // Speicherung aktualisieren
+        saveData();
     };
 
-    // =======================================
+    // ====================================================
     // Daten speichern
-    // =======================================
+    // ====================================================
     function saveData() {
         const data = {
-            kw: getWeekNumber(),
+            kw: getCurrentWeekFromInput(),
             fields: {}
         };
 
@@ -137,22 +147,27 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.setItem("wochenbericht", JSON.stringify(data));
     }
 
-    // =======================================
-    // Daten laden ODER zurücksetzen
-    // =======================================
+    // ====================================================
+    // Daten laden oder neue Woche resetten
+    // ====================================================
     function loadOrReset() {
         const saved = JSON.parse(localStorage.getItem("wochenbericht") || "{}");
-        const currentKW = getWeekNumber();
+        const currentKW = getCurrentWeekFromInput();
 
-        // NEUE WOCHE → ALLES ZURÜCKSETZEN
         if (!saved.kw || saved.kw !== currentKW) {
-            console.log("Neue Woche → Daten zurückgesetzt");
-            localStorage.removeItem("wochenbericht");
+            console.log("Neue Woche erkannt → alles zurückgesetzt");
+
+            document.querySelectorAll("input").forEach(inp => inp.value = "");
+
+            document.getElementById("total-hours").textContent = "00:00";
+            document.getElementById("total-spesen").textContent = "0,00 €";
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            localStorage.removeItem("wochenbericht");
             return;
         }
 
-        // ALTE WOCHE → ALLES LADEN
         for (const key in saved.fields) {
             const inp = document.querySelector(
                 `[id='${key}'], [name='${key}']`
@@ -162,7 +177,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         if (saved.signature) {
             const img = new Image();
-            img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            img.onload = () =>
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             img.src = saved.signature;
         }
 
@@ -171,9 +187,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     loadOrReset();
 
-    // =======================================
-    // PDF DIREKT per WhatsApp senden
-    // =======================================
+    // ====================================================
+    // PDF per WhatsApp senden
+    // ====================================================
     document.getElementById("send-pdf").onclick = async () => {
         const { jsPDF } = window.jspdf;
 
@@ -200,9 +216,10 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         } else {
             pdf.save("wochenbericht.pdf");
-            alert("PDF gespeichert — Dein Gerät unterstützt WhatsApp-Teilen nicht direkt.");
+            alert("PDF gespeichert — WhatsApp-Teilen wird nicht direkt unterstützt.");
         }
     };
 
-}); // ENDE DOMContentLoaded
+});
+
 
