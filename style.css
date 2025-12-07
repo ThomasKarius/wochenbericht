@@ -2,21 +2,20 @@ body {
     font-family: system-ui;
     margin: 0;
     padding: 10px;
-    background: #f5f5f5;
+    background: #f3f3f3;
 }
 
 .wrapper {
     background: white;
     padding: 12px;
     border-radius: 10px;
-    max-width: 750px;
+    max-width: 700px;
     margin: auto;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
 h1 {
     text-align: center;
-    margin-bottom: 10px;
+    margin-top: 0;
 }
 
 .row {
@@ -33,56 +32,54 @@ h1 {
 
 .field input {
     padding: 6px;
-    border-radius: 6px;
     border: 1px solid #ccc;
-}
-
-.table-box {
-    overflow-x: auto;
-    margin-top: 10px;
+    border-radius: 6px;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 14px;
+    margin-top: 10px;
 }
 
 th, td {
     border: 1px solid #ddd;
     padding: 6px;
     text-align: center;
-}
-
-#signature-pad {
-    width: 100%;
-    height: 150px;
-    border: 1px solid #ccc;
-    border-radius: 8px;
-    background: white;
-    margin-top: 10px;
-}
-
-.buttons {
-    display: flex;
-    margin-top: 10px;
-    gap: 10px;
-}
-
-button {
-    flex: 1;
-    padding: 10px;
-    border-radius: 30px;
-    border: none;
-    cursor: pointer;
     font-size: 14px;
 }
 
-#clear-signature { background: #eee; }
-#send-whatsapp { background: #25d366; color: white; }
-#pdf-button { background: #007bff; color: white; }
+.pause-col {
+    width: 50px !important;
+}
 
-input[id^="spesen"] {
-    width: 80px;
+.spesen-col {
+    width: 40px !important;
+}
+
+input[name^="spesen"] {
+    width: 40px;
+    text-align: center;
+}
+
+#signature {
+    width: 100%;
+    height: 150px;
+    border: 1px solid #aaa;
+    border-radius: 8px;
+    margin-top: 10px;
+    touch-action: none;
+    background: white;
+}
+
+#send-pdf {
+    margin-top: 12px;
+    width: 100%;
+    padding: 10px;
+    border: none;
+    background: #25D366;
+    color: white;
+    font-size: 16px;
+    border-radius: 30px;
 }
 
