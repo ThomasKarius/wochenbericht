@@ -1,8 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    // =======================================
+    // ============================
     // Tabellen-Erzeugung
-    // =======================================
+    // ============================
 
     const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
     const tbody = document.getElementById("days");
@@ -21,9 +21,9 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
     });
 
-    // =======================================
+    // ============================
     // Stunden & Spesen Berechnung
-    // =======================================
+    // ============================
 
     function calcTime() {
         let total = 0;
@@ -63,9 +63,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.addEventListener("input", calcTime);
 
-    // =======================================
+    // ============================
     // Unterschrift
-    // =======================================
+    // ============================
 
     const canvas = document.getElementById("signature");
     const ctx = canvas.getContext("2d");
@@ -99,9 +99,17 @@ document.addEventListener("DOMContentLoaded", () => {
     canvas.addEventListener("pointerup", () => drawing = false);
     canvas.addEventListener("pointerleave", () => drawing = false);
 
-    // =======================================
-    // PDF DIREKT per WhatsApp senden
-    // =======================================
+    // ============================
+    // Unterschrift löschen
+    // ============================
+
+    document.getElementById("clear-signature").onclick = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    };
+
+    // ============================
+    // PDF per WhatsApp senden
+    // ============================
 
     document.getElementById("send-pdf").onclick = async () => {
         const { jsPDF } = window.jspdf;
@@ -129,10 +137,11 @@ document.addEventListener("DOMContentLoaded", () => {
             });
         } else {
             pdf.save("wochenbericht.pdf");
-            alert("PDF gespeichert — WhatsApp-Versand wird nicht direkt unterstützt.");
+            alert("PDF wurde gespeichert. Dein Gerät unterstützt WhatsApp-Teilen nicht direkt.");
         }
     };
 
-}); // ENDE DOMContentLoaded
+}); // Ende DOMContentLoaded
+
 
 
