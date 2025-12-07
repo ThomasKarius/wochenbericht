@@ -5,14 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Wochenbericht</title>
 
-    <!-- PWA -->
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#007bff">
-
-    <!-- Styles -->
     <link rel="stylesheet" href="style.css">
 
-    <!-- Service Worker -->
+    <!-- PDF Bibliotheken -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
     <script>
         if ("serviceWorker" in navigator) {
             navigator.serviceWorker.register("service-worker.js");
@@ -22,7 +20,8 @@
 
 <body>
 <div class="wrapper">
-    <h1>Wochenbericht / Stundenzettel</h1>
+
+    <h1>Wochenbericht</h1>
 
     <div class="row">
         <div class="field">
@@ -43,45 +42,34 @@
         </div>
     </div>
 
-    <div class="table-box">
-        <table>
-            <thead>
+    <table>
+        <thead>
             <tr>
                 <th>Tag</th>
                 <th>Start</th>
-                <th>Pause</th>
+                <th class="pause-col">Pause</th>
                 <th>Ende</th>
                 <th>Std.</th>
                 <th>Tour</th>
-                <th>Spesen</th>
+                <th class="spesen-col">€</th>
             </tr>
-            </thead>
-            <tbody id="days"></tbody>
-        </table>
-    </div>
+        </thead>
+        <tbody id="days"></tbody>
+    </table>
 
     <div class="totals">
-        <div>
-            <strong>Wochenstunden:</strong><br>
-            <span id="total-hours">00:00</span>
-        </div>
-        <div>
-            <strong>Spesen gesamt:</strong><br>
-            <span id="total-spesen">0,00 €</span>
-        </div>
+        <div><strong>Stunden:</strong> <span id="total-hours">00:00</span></div>
+        <div><strong>Spesen:</strong> <span id="total-spesen">0,00 €</span></div>
     </div>
 
-    <label>Unterschrift (Finger auf Handy):</label>
-    <canvas id="signature-pad"></canvas>
+    <label>Unterschrift:</label>
+    <canvas id="signature"></canvas>
 
-    <div class="buttons">
-        <button id="clear-signature">Unterschrift löschen</button>
-        <button id="send-whatsapp">WhatsApp Text senden</button>
-    </div>
+    <button id="send-pdf">PDF per WhatsApp senden</button>
+
 </div>
 
-<!-- ❗ HIER WIRD DIE script.js RICHTIG GELADEN -->
 <script src="script.js"></script>
-
 </body>
 </html>
+
