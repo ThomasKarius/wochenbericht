@@ -163,5 +163,90 @@ document.getElementById("send-pdf").onclick = async () => {
         alert("PDF gespeichert — direkter WhatsApp Versand nicht unterstützt.");
     }
 };
+// ===============================
+// AUTOMATISCHES SPEICHERN
+// ===============================
+
+// Alle Eingabefelder überwachen
+function autoSave() {
+    const data = {};
+
+    // Textfelder, Zahlenfelder, Datumsfelder, Zeiten, Tour, Spesen
+    document.querySelectorAll("input").forEach(input => {
+        data[input.id || input.name] = input.value;
+    });
+
+    // Tabellenwerte (Start, Pause, Ende, Spesen usw.)
+    days.forEach((d, i) => {
+        data["start" + i] = document.querySelector(`[name=start${i}]`).value;
+        data["pause" + i] = document.querySelector(`[name=pause${i}]`).value;
+        data["end" + i] = document.querySelector(`[name=end${i}]`).value;
+        data["spesen" + i] = document.querySelector(`[name=spesen${i}]`).value;
+        data["tour" + i] = document.querySelector(`[name=tour${i}]`).value;
+    });
+
+    // Unterschrift speichern
+    const canvas = document.getElementById("signature");
+    data.signature = canvas.toDataURL();
+
+    // In LocalStorage speichern
+    localStorage.setItem("wochenbericht", JSON.stringify(data));
+    //console.log("Auto gespeichert", data);
+}
+
+// Speichern bei jeder Eingabe
+document.addEventListener("input", autoSave);
+
+// ========================================
+// DATEN AUTOMATISCH LADEN
+// ========================================
+function loadSavedData() {
+    const saved = JSON.parse(localStorage.getItem("wochenbericht"));
+    if (!saved) return;
+
+    document.querySelectorAll("input").forEach(input => {
+        const key = input.id || input.name;
+        if (saved[key] !== undefined) {
+            input.value = saved[key];
+        }
+    });
+
+    // Tabellen wiederherstellen
+    days.forEach((d, i) => {
+        if (saved["start" + i]) document.querySelector(`[name=start${i}]`).value = saved["start" + i];
+        if (saved["pause" + i]) document.querySelector(`[name=pause${i}]`).value = saved["pause" + i];
+        if (saved["end" + i]) document.querySelector(`[name=end${i}]`).value = saved["end" + i];
+        if (saved["spesen" + i]) document.querySelector(`[name=spesen${i}]`).value = saved["spesen" + i];
+        if (saved["tour" + i]) document.querySelector(`[name=tour${i}]`).value = saved["tour" + i];
+    });
+
+    // Stunden neu berechnen
+    calcTime();
+
+    // Unterschrift wiederherstellen
+    if (saved.signature) {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.getElementById("signature");
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = saved.signature;
+    }
+}
+
+// Beim App-Start laden
+window.addEventListener("load", loadSavedData);
+
+
+// ========================================
+// RESET BUTTON (Daten löschen)
+// ========================================
+document.getElementById("reset").addEventListener("click", () => {
+    if (!confirm("Alle Daten wirklich löschen?")) return;
+
+    localStorage.removeItem("wochenbericht");
+    location.reload();
+});
 
 
