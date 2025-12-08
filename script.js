@@ -12,7 +12,7 @@ days.forEach((d, i) => {
             <td><input type="number" name="pause${i}" min="0" value="0" style="width:50px"></td>
             <td><input type="time" name="end${i}"></td>
             <td id="hours${i}"></td>
-            <td><input type="text" name="tour${i}"></td>
+            <td><input type="text" name="tour${i}" style="width:150px"></td>
             <td><input type="text" maxlength="3" name="spesen${i}" style="width:40px"></td>
         </tr>
     `;
@@ -86,18 +86,18 @@ document.getElementById("clear-signature").onclick = () => {
 
 
 // ===============================
-// PDF DIREKT PER WHATSAPP SENDEN
+// PDF PER WHATSAPP
 // ===============================
 document.getElementById("send-pdf").onclick = async () => {
     const { jsPDF } = window.jspdf;
 
     const element = document.querySelector(".wrapper");
-    const screenshot = await html2canvas(element, { scale: 2 });
-    const imgData = screenshot.toDataURL("image/png");
+    const output = await html2canvas(element, { scale: 2 });
+    const imgData = output.toDataURL("image/png");
 
     const pdf = new jsPDF("p", "mm", "a4");
     const w = 210;
-    const h = (screenshot.height * 210) / screenshot.width;
+    const h = (output.height * 210) / output.width;
 
     pdf.addImage(imgData, "PNG", 0, 0, w, h);
 
@@ -112,7 +112,6 @@ document.getElementById("send-pdf").onclick = async () => {
         });
     } else {
         pdf.save("wochenbericht.pdf");
-        alert("PDF gespeichert.");
     }
 };
 
@@ -166,5 +165,3 @@ document.getElementById("reset-week").onclick = () => {
     localStorage.removeItem("wochenbericht");
     location.reload();
 };
-
-
