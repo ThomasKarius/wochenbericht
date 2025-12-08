@@ -1,41 +1,38 @@
 body {
-    font-family: system-ui, sans-serif;
+    font-family: Arial, sans-serif;
+    background: #f2f2f2;
     margin: 0;
-    padding: 10px;
-    background: #f3f3f3;
+    padding: 0;
 }
 
 .wrapper {
-    background: white;
-    padding: 14px;
-    border-radius: 12px;
-    max-width: 650px;
+    max-width: 700px;
     margin: auto;
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
 }
 
 h1 {
     text-align: center;
-    margin-top: 0;
+    margin-bottom: 20px;
 }
 
-.inputs {
+.row {
     display: flex;
-    flex-direction: column;
     gap: 10px;
+    flex-wrap: wrap;
 }
 
 .field {
-    display: flex;
-    flex-direction: column;
+    flex: 1;
+    min-width: 150px;
 }
 
-.field input {
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 16px;
+input {
     width: 100%;
-    box-sizing: border-box;
+    padding: 5px;
+    font-size: 16px;
 }
 
 table {
@@ -48,36 +45,34 @@ th, td {
     border: 1px solid #ddd;
     padding: 6px;
     text-align: center;
-    font-size: 14px;
 }
 
-.pause-col { width: 50px; }
-.spesen-col { width: 40px; }
+.pause-col {
+    width: 50px;
+}
+
+.spesen-col {
+    width: 40px;
+}
 
 #signature {
     width: 100%;
-    height: 150px;
-    border: 1px solid #aaa;
-    margin-top: 12px;
-    margin-bottom: 18px;
-    border-radius: 8px;
-    background: white;
-    touch-action: none;
-    z-index: 1;
+    height: 180px;
+    border: 1px solid #000;
+    margin-top: 10px;
 }
 
 button {
     width: 100%;
     padding: 12px;
     margin-top: 10px;
-    border: none;
-    border-radius: 30px;
     font-size: 16px;
-    cursor: pointer;
-    z-index: 9999;
-    position: relative;
+    border: none;
+    background: #007bff;
+    color: white;
+    border-radius: 6px;
 }
 
-.btn-grey { background: #777; color: white; }
-.btn-green { background: #25D366; color: white; }
-
+button:hover {
+    background: #0056b3;
+}
