@@ -1,48 +1,38 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Wochenbericht</title>
 
-    <!-- Manifest (PWA) -->
-    <link rel="manifest" href="/wochenbericht/manifest.json">
-
-    <!-- Stylesheet -->
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="style.css">
 
     <!-- PDF Bibliotheken -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-    <!-- Service Worker -->
     <script>
         if ("serviceWorker" in navigator) {
-            navigator.serviceWorker.register("/wochenbericht/service-worker.js")
-            .then(() => console.log("Service Worker installiert"))
-            .catch(err => console.error("SW Fehler:", err));
+            navigator.serviceWorker.register("service-worker.js");
         }
     </script>
-
 </head>
-<body>
 
+<body>
 <div class="wrapper">
 
     <h1>Wochenbericht</h1>
 
-    <div class="inputs">
+    <div class="row">
         <div class="field">
             <label>Mitarbeiter</label>
             <input id="name" type="text">
         </div>
-
         <div class="field">
             <label>Von</label>
             <input id="from" type="date">
         </div>
-
         <div class="field">
             <label>Bis</label>
             <input id="to" type="date">
@@ -51,15 +41,15 @@
 
     <table>
         <thead>
-        <tr>
-            <th>Tag</th>
-            <th>Start</th>
-            <th class="pause-col">Pause</th>
-            <th>Ende</th>
-            <th>Std.</th>
-            <th>Tour</th>
-            <th class="spesen-col">€</th>
-        </tr>
+            <tr>
+                <th>Tag</th>
+                <th>Start</th>
+                <th class="pause-col">Pause</th>
+                <th>Ende</th>
+                <th>Std.</th>
+                <th>Tour</th>
+                <th class="spesen-col">€</th>
+            </tr>
         </thead>
         <tbody id="days"></tbody>
     </table>
@@ -72,15 +62,13 @@
     <label>Unterschrift:</label>
     <canvas id="signature"></canvas>
 
-    <button id="clear-signature" class="btn-grey">Unterschrift löschen</button>
-    <button id="reset">Alles löschen</button>
-    <button id="send-pdf" class="btn-green">PDF per WhatsApp senden</button>
+    <button id="clear-signature">Unterschrift löschen</button>
+    <button id="send-pdf">PDF per WhatsApp senden</button>
+    <button id="reset-week">Woche zurücksetzen</button>
 
 </div>
 
 <script src="script.js"></script>
-
 </body>
 </html>
-
 
