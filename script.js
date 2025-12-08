@@ -19,7 +19,7 @@ days.forEach((d, i) => {
 });
 
 // ===============================
-// STUNDEN BERECHNEN
+// STUNDEN BERECHNUNG
 // ===============================
 function calcTime() {
     let total = 0;
@@ -58,14 +58,26 @@ document.addEventListener("input", calcTime);
 
 
 // ===============================
-// UNTERSCHRIFT
+// UNTERSCHRIFT – 100% FUNKTIONAL
 // ===============================
 const canvas = document.getElementById("signature");
 const ctx = canvas.getContext("2d");
 let drawing = false;
 
-canvas.width = canvas.offsetWidth;
-canvas.height = canvas.offsetHeight;
+function resizeCanvas() {
+    const rect = canvas.getBoundingClientRect();
+    const ratio = window.devicePixelRatio || 1;
+
+    canvas.width = rect.width * ratio;
+    canvas.height = rect.height * ratio;
+
+    ctx.scale(ratio, ratio);
+    ctx.lineWidth = 2;
+    ctx.lineCap = "round";
+}
+
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
 
 canvas.addEventListener("pointerdown", e => {
     drawing = true;
@@ -78,6 +90,7 @@ canvas.addEventListener("pointermove", e => {
     ctx.stroke();
 });
 canvas.addEventListener("pointerup", () => drawing = false);
+canvas.addEventListener("pointerleave", () => drawing = false);
 
 document.getElementById("clear-signature").onclick = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -97,7 +110,7 @@ document.getElementById("send-pdf").onclick = async () => {
 
     const pdf = new jsPDF("p", "mm", "a4");
     const w = 210;
-    const h = (output.height * 210) / output.width;
+    const h = (output.height * w) / output.width;
 
     pdf.addImage(imgData, "PNG", 0, 0, w, h);
 
@@ -105,7 +118,7 @@ document.getElementById("send-pdf").onclick = async () => {
     const file = new File([blob], "wochenbericht.pdf", { type: "application/pdf" });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
+        navigator.share({
             title: "Wochenbericht",
             files: [file],
             text: "Mein Wochenbericht"
@@ -165,3 +178,4 @@ document.getElementById("reset-week").onclick = () => {
     localStorage.removeItem("wochenbericht");
     location.reload();
 };
+
