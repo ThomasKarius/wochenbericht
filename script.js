@@ -1,7 +1,6 @@
-// =======================================
-// Tabellen-Erzeugung
-// =======================================
-
+// ===============================
+// TABELLENAUFBAU
+// ===============================
 const days = ["Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
 const tbody = document.getElementById("days");
 
@@ -12,37 +11,32 @@ days.forEach((d, i) => {
             <td><input type="time" name="start${i}"></td>
             <td><input type="number" name="pause${i}" min="0" value="0" style="width:50px"></td>
             <td><input type="time" name="end${i}"></td>
-            <td id="hours${i}">00:00</td>
+            <td id="hours${i}"></td>
             <td><input type="text" name="tour${i}"></td>
             <td><input type="text" maxlength="3" name="spesen${i}" style="width:40px"></td>
         </tr>
     `;
 });
 
-// =======================================
-// Stunden- & Spesenberechnung
-// =======================================
-
+// ===============================
+// STUNDEN BERECHNEN
+// ===============================
 function calcTime() {
     let total = 0;
     let spesenTotal = 0;
 
     days.forEach((_, i) => {
         const s = document.querySelector(`[name=start${i}]`).value;
-        const e = document.querySelector(`[name=end${i}]`).value;
         const p = parseInt(document.querySelector(`[name=pause${i}]`).value || 0);
+        const e = document.querySelector(`[name=end${i}]`).value;
 
         if (s && e) {
             const diff = Math.max(0, toMin(e) - toMin(s) - p);
             total += diff;
             document.getElementById(`hours${i}`).textContent = toHHMM(diff);
-        } else {
-            document.getElementById(`hours${i}`).textContent = "00:00";
         }
 
-        const sp = parseFloat(
-            document.querySelector(`[name=spesen${i}]`).value.replace(",", ".")
-        );
+        const sp = parseFloat(document.querySelector(`[name=spesen${i}]`).value.replace(",", "."));
         if (!isNaN(sp)) spesenTotal += sp;
     });
 
@@ -56,84 +50,44 @@ function toMin(t) {
 }
 
 function toHHMM(min) {
-    return (
-        String(Math.floor(min / 60)).padStart(2, "0") +
-        ":" +
-        String(min % 60).padStart(2, "0")
-    );
+    return String(Math.floor(min / 60)).padStart(2, "0") + ":" +
+           String(min % 60).padStart(2, "0");
 }
 
 document.addEventListener("input", calcTime);
 
-// =======================================
-// Unterschrift
-// =======================================
 
+// ===============================
+// UNTERSCHRIFT
+// ===============================
 const canvas = document.getElementById("signature");
 const ctx = canvas.getContext("2d");
 let drawing = false;
 
-function resizeCanvas() {
-    const rect = canvas.getBoundingClientRect();
-    const ratio = window.devicePixelRatio || 1;
-    canvas.width = rect.width * ratio;
-    canvas.height = rect.height * ratio;
-    ctx.scale(ratio, ratio);
-    ctx.lineWidth = 2;
-    ctx.lineCap = "round";
-}
-
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
+canvas.width = canvas.offsetWidth;
+canvas.height = canvas.offsetHeight;
 
 canvas.addEventListener("pointerdown", e => {
     drawing = true;
     ctx.beginPath();
     ctx.moveTo(e.offsetX, e.offsetY);
 });
-
 canvas.addEventListener("pointermove", e => {
     if (!drawing) return;
     ctx.lineTo(e.offsetX, e.offsetY);
     ctx.stroke();
 });
-
 canvas.addEventListener("pointerup", () => drawing = false);
-canvas.addEventListener("pointerleave", () => drawing = false);
 
 document.getElementById("clear-signature").onclick = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    autoSave();
 };
 
-// =======================================
-// Reset – Alles auf null setzen
-// =======================================
 
-document.getElementById("reset-week").onclick = () => {
-    if (!confirm("Wirklich alles löschen?")) return;
-
-    days.forEach((_, i) => {
-        document.querySelector(`[name=start${i}]`).value = "";
-        document.querySelector(`[name=end${i}]`).value = "";
-        document.querySelector(`[name=pause${i}]`).value = "0";
-        document.querySelector(`[name=tour${i}]`).value = "";
-        document.querySelector(`[name=spesen${i}]`).value = "";
-        document.getElementById(`hours${i}`).textContent = "00:00";
-    });
-
-    document.getElementById("name").value = "";
-    document.getElementById("from").value = "";
-    document.getElementById("to").value = "";
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    calcTime();
-};
-
-// =======================================
-// PDF DIREKT per WhatsApp senden
-// =======================================
-
+// ===============================
+// PDF DIREKT PER WHATSAPP SENDEN
+// ===============================
 document.getElementById("send-pdf").onclick = async () => {
     const { jsPDF } = window.jspdf;
 
@@ -148,105 +102,69 @@ document.getElementById("send-pdf").onclick = async () => {
     pdf.addImage(imgData, "PNG", 0, 0, w, h);
 
     const blob = pdf.output("blob");
-    const file = new File([blob], "wochenbericht.pdf", {
-        type: "application/pdf"
-    });
+    const file = new File([blob], "wochenbericht.pdf", { type: "application/pdf" });
 
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({
             title: "Wochenbericht",
-            text: "Mein Wochenbericht",
-            files: [file]
+            files: [file],
+            text: "Mein Wochenbericht"
         });
     } else {
         pdf.save("wochenbericht.pdf");
-        alert("PDF gespeichert — direkter WhatsApp Versand nicht unterstützt.");
+        alert("PDF gespeichert.");
     }
 };
-// ===============================
-// AUTOMATISCHES SPEICHERN
-// ===============================
 
-// Alle Eingabefelder überwachen
+
+// ===============================
+// AUTO-SAVE
+// ===============================
 function autoSave() {
     const data = {};
 
-    // Textfelder, Zahlenfelder, Datumsfelder, Zeiten, Tour, Spesen
     document.querySelectorAll("input").forEach(input => {
-        data[input.id || input.name] = input.value;
+        const key = input.id || input.name;
+        if (key) data[key] = input.value;
     });
 
-    // Tabellenwerte (Start, Pause, Ende, Spesen usw.)
-    days.forEach((d, i) => {
-        data["start" + i] = document.querySelector(`[name=start${i}]`).value;
-        data["pause" + i] = document.querySelector(`[name=pause${i}]`).value;
-        data["end" + i] = document.querySelector(`[name=end${i}]`).value;
-        data["spesen" + i] = document.querySelector(`[name=spesen${i}]`).value;
-        data["tour" + i] = document.querySelector(`[name=tour${i}]`).value;
-    });
-
-    // Unterschrift speichern
-    const canvas = document.getElementById("signature");
     data.signature = canvas.toDataURL();
-
-    // In LocalStorage speichern
     localStorage.setItem("wochenbericht", JSON.stringify(data));
-    //console.log("Auto gespeichert", data);
 }
 
-// Speichern bei jeder Eingabe
 document.addEventListener("input", autoSave);
 
-// ========================================
-// DATEN AUTOMATISCH LADEN
-// ========================================
+
+// ===============================
+// AUTO-LOAD
+// ===============================
 function loadSavedData() {
     const saved = JSON.parse(localStorage.getItem("wochenbericht"));
     if (!saved) return;
 
     document.querySelectorAll("input").forEach(input => {
         const key = input.id || input.name;
-        if (saved[key] !== undefined) {
-            input.value = saved[key];
-        }
+        if (saved[key] !== undefined) input.value = saved[key];
     });
 
-    // Tabellen wiederherstellen
-    days.forEach((d, i) => {
-        if (saved["start" + i]) document.querySelector(`[name=start${i}]`).value = saved["start" + i];
-        if (saved["pause" + i]) document.querySelector(`[name=pause${i}]`).value = saved["pause" + i];
-        if (saved["end" + i]) document.querySelector(`[name=end${i}]`).value = saved["end" + i];
-        if (saved["spesen" + i]) document.querySelector(`[name=spesen${i}]`).value = saved["spesen" + i];
-        if (saved["tour" + i]) document.querySelector(`[name=tour${i}]`).value = saved["tour" + i];
-    });
-
-    // Stunden neu berechnen
     calcTime();
 
-    // Unterschrift wiederherstellen
     if (saved.signature) {
         const img = new Image();
-        img.onload = () => {
-            const canvas = document.getElementById("signature");
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        };
+        img.onload = () => ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
         img.src = saved.signature;
     }
 }
-
-// Beim App-Start laden
 window.addEventListener("load", loadSavedData);
 
 
-// ========================================
-// RESET BUTTON (Daten löschen)
-// ========================================
-document.getElementById("reset").addEventListener("click", () => {
-    if (!confirm("Alle Daten wirklich löschen?")) return;
-
+// ===============================
+// WOCHE ZURÜCKSETZEN
+// ===============================
+document.getElementById("reset-week").onclick = () => {
+    if (!confirm("Woche wirklich löschen?")) return;
     localStorage.removeItem("wochenbericht");
     location.reload();
-});
+};
 
 
