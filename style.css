@@ -38,6 +38,7 @@ input {
 table {
     width: 100%;
     border-collapse: collapse;
+    table-layout: auto !important;
     margin-top: 15px;
 }
 
@@ -53,6 +54,21 @@ th, td {
 
 .spesen-col {
     width: 40px;
+}
+
+/* TOUR – BREITER */
+.tour-col {
+    width: 160px;
+}
+
+td:nth-child(6) input {
+    width: 150px !important;
+}
+
+@media (max-width: 420px) {
+    td:nth-child(6) input {
+        width: 120px !important;
+    }
 }
 
 #signature {
