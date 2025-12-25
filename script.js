@@ -178,4 +178,3 @@ document.getElementById("reset-week").onclick = () => {
     localStorage.removeItem("wochenbericht");
     location.reload();
 };
-
